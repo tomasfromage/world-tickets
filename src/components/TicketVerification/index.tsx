@@ -41,17 +41,17 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
     setVerificationResult(null);
 
     try {
-      // Krok 1: Ověření World ID pomocí MiniKit Verify
+      // Step 1: World ID verification using MiniKit Verify
       const verifyResult = await MiniKit.commandsAsync.verify({
         action: 'verification',
         signal: eventId.toString(),
       });
 
       if (verifyResult.finalPayload.status !== 'success') {
-        throw new Error('World ID ověření se nezdařilo');
+        throw new Error('World ID verification failed');
       }
 
-      // Krok 2: Ověření na backend serveru
+      // Step 2: Backend server verification
       const backendVerification = await fetch('/api/verify-ticket-owner', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -65,26 +65,26 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
       const backendResult = await backendVerification.json();
       
       if (!backendResult.success) {
-        throw new Error('Ověření na backend serveru selhalo');
+        throw new Error('Backend server verification failed');
       }
 
-      // Krok 3: Získání informací o uživateli z World ID
+      // Step 3: Get user information from World ID
       const userInfo = await MiniKit.getUserInfo(verifyResult.finalPayload.nullifier_hash);
       
-      // Krok 4: Ověření vlastnictví vstupenky v smart contractu
+      // Step 4: Verify ticket ownership in smart contract
       const ticketVerification = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
             address: TICKET_CONTRACT_ADDRESS,
             abi: TicketNFTABI,
             functionName: 'verifyTicketOwnership',
-            args: [eventId], // Zjednodušeno - v reálnosti bychom potřebovali ticket ID
+            args: [eventId], // Simplified - in reality we would need ticket ID
           },
         ],
       });
 
       if (ticketVerification.finalPayload.status === 'success') {
-        // Simulace získání ticket info (v reálné aplikaci by se parsovaly logs)
+        // Simulate getting ticket info (in real app would parse logs)
         const mockTicketInfo = {
           ticketId: 1,
           eventId: eventId,
@@ -96,7 +96,7 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
           isValid: true,
           ticketInfo: mockTicketInfo,
           userInfo: {
-            username: userInfo.username || 'Neznámý uživatel',
+            username: userInfo.username || 'Unknown User',
             profilePictureUrl: userInfo.profilePictureUrl || '',
             walletAddress: userInfo.walletAddress,
           },
@@ -106,13 +106,13 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
         setVerificationState('success');
         onVerificationComplete?.(result);
       } else {
-        throw new Error('Ověření vlastnictví vstupenky selhalo');
+        throw new Error('Ticket ownership verification failed');
       }
     } catch (error) {
-      console.error('Chyba při ověřování:', error);
+      console.error('Error during verification:', error);
       const result: VerificationResult = {
         isValid: false,
-        error: error instanceof Error ? error.message : 'Neznámá chyba',
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
       
       setVerificationResult(result);
@@ -136,7 +136,7 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
         ],
       });
 
-      // Aktualizujeme stav
+      // Update state
       setVerificationResult(prev => prev ? {
         ...prev,
         ticketInfo: prev.ticketInfo ? {
@@ -145,7 +145,7 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
         } : undefined
       } : null);
     } catch (error) {
-      console.error('Chyba při označování účasti:', error);
+      console.error('Error marking attendance:', error);
     }
   };
 
@@ -156,14 +156,14 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
 
   return (
     <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <h2 className="text-xl font-bold mb-6 text-center">Ověření vstupenky</h2>
+      <h2 className="text-xl font-bold mb-6 text-center">Ticket Verification</h2>
 
       {verificationState === 'idle' && (
         <div className="text-center">
           <div className="mb-6">
             <User className="w-16 h-16 mx-auto text-gray-400 mb-4" />
             <p className="text-gray-600">
-              Požádejte návštěvníka o ověření identity pomocí World ID
+              Ask the visitor to verify their identity using World ID
             </p>
           </div>
           
@@ -173,7 +173,7 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
             onClick={handleVerifyAttendee}
             className="w-full"
           >
-            Ověřit návštěvníka
+            Verify Visitor
           </Button>
         </div>
       )}
@@ -182,9 +182,9 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
         <div className="text-center">
           <LiveFeedback
             label={{
-              pending: 'Ověřuji...',
-              success: 'Ověřeno',
-              failed: 'Chyba ověření',
+              pending: 'Verifying...',
+              success: 'Verified',
+              failed: 'Verification Error',
             }}
             state="pending"
             className="w-full"
@@ -212,7 +212,7 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
             <p className={`font-semibold ${
               verificationResult.isValid ? 'text-green-800' : 'text-red-800'
             }`}>
-              {verificationResult.isValid ? 'Vstupenka je platná!' : 'Vstupenka není platná!'}
+              {verificationResult.isValid ? 'Ticket is valid!' : 'Ticket is not valid!'}
             </p>
             
             {verificationResult.error && (
@@ -222,7 +222,7 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
 
           {verificationResult.isValid && verificationResult.userInfo && (
             <div className="border rounded-lg p-4">
-              <h3 className="font-semibold mb-3">Informace o návštěvníkovi</h3>
+              <h3 className="font-semibold mb-3">Visitor Information</h3>
               
               <div className="flex items-center gap-3 mb-4">
                 <Marble 
@@ -240,13 +240,13 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
               {verificationResult.ticketInfo && (
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span>ID vstupenky:</span>
+                    <span>Ticket ID:</span>
                     <span>{verificationResult.ticketInfo.ticketId}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Účast označena:</span>
+                    <span>Attendance Marked:</span>
                     <span className={verificationResult.ticketInfo.hasAttended ? 'text-green-600' : 'text-orange-600'}>
-                      {verificationResult.ticketInfo.hasAttended ? 'Ano' : 'Ne'}
+                      {verificationResult.ticketInfo.hasAttended ? 'Yes' : 'No'}
                     </span>
                   </div>
                 </div>
@@ -259,7 +259,7 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
                   onClick={handleMarkAttendance}
                   className="w-full mt-3"
                 >
-                  Označit účast
+                  Mark Attendance
                 </Button>
               )}
             </div>
@@ -271,7 +271,7 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
             onClick={resetVerification}
             className="w-full"
           >
-            Ověřit dalšího návštěvníka
+            Verify Another Visitor
           </Button>
         </div>
       )}

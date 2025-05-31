@@ -18,17 +18,17 @@ export const Navigation = () => {
   const navItems = [
     {
       icon: Home,
-      label: 'Domů',
+      label: 'Home',
       path: '/home',
     },
     {
       icon: CreditCard,
-      label: 'Vstupenky',
+      label: 'Tickets',
       path: '/tickets',
     },
     {
       icon: User,
-      label: 'Profil',
+      label: 'Profile',
       path: '/profile',
     },
   ];

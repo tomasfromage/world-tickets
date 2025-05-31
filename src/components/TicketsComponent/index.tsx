@@ -9,9 +9,10 @@ import { useState } from 'react';
 interface TicketsComponentProps {
   events: Event[];
   userAddress: string;
+  isLoading?: boolean;
 }
 
-export const TicketsComponent = ({ events }: TicketsComponentProps) => {
+export const TicketsComponent = ({ events, isLoading = false }: TicketsComponentProps) => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [showBuyTicket, setShowBuyTicket] = useState(false);
   const [activeTab, setActiveTab] = useState<'events' | 'my-tickets' | 'verify'>('events');
@@ -22,7 +23,7 @@ export const TicketsComponent = ({ events }: TicketsComponentProps) => {
   };
 
   const handleTicketPurchaseSuccess = (ticketId: number) => {
-    console.log('Vstupenka zakoupena:', ticketId);
+    console.log('Ticket purchased:', ticketId);
     setShowBuyTicket(false);
     setSelectedEvent(null);
     // TODO: Refresh user tickets
@@ -55,7 +56,7 @@ export const TicketsComponent = ({ events }: TicketsComponentProps) => {
           }`}
           onClick={() => setActiveTab('events')}
         >
-          Události
+          Events
         </button>
         <button
           className={`flex-1 py-2 px-4 text-center ${
@@ -65,7 +66,7 @@ export const TicketsComponent = ({ events }: TicketsComponentProps) => {
           }`}
           onClick={() => setActiveTab('my-tickets')}
         >
-          Mé vstupenky
+          My Tickets
         </button>
         <button
           className={`flex-1 py-2 px-4 text-center ${
@@ -75,7 +76,7 @@ export const TicketsComponent = ({ events }: TicketsComponentProps) => {
           }`}
           onClick={() => setActiveTab('verify')}
         >
-          Ověření
+          Verification
         </button>
       </div>
       
@@ -85,29 +86,30 @@ export const TicketsComponent = ({ events }: TicketsComponentProps) => {
           events={events}
           onEventSelect={handleEventSelect}
           showCreateButton={false}
+          isLoading={isLoading}
         />
       )}
       
       {activeTab === 'my-tickets' && (
         <div className="text-center py-8">
-          <h3 className="text-lg font-semibold mb-2">Mé vstupenky</h3>
+          <h3 className="text-lg font-semibold mb-2">My Tickets</h3>
           <p className="text-gray-600">
-            Zde budou zobrazeny vaše zakoupené vstupenky
+            Your purchased tickets will be displayed here
           </p>
-          {/* TODO: Implementovat UserTickets komponentu */}
+          {/* TODO: Implement UserTickets component */}
         </div>
       )}
       
       {activeTab === 'verify' && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-center">Ověření vstupenek</h3>
+          <h3 className="text-lg font-semibold text-center">Ticket Verification</h3>
           <p className="text-sm text-gray-600 text-center mb-4">
-            Pro vendory - ověření návštěvníků na vstupu
+            For vendors - verify visitors at entry
           </p>
           <TicketVerification
-            eventId={1} // TODO: Dynamicky podle vybrané události
+            eventId={1} // TODO: Dynamic based on selected event
             onVerificationComplete={(result) => {
-              console.log('Ověření dokončeno:', result);
+              console.log('Verification completed:', result);
             }}
           />
         </div>

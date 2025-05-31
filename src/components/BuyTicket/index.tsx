@@ -17,7 +17,7 @@ export const BuyTicket = ({ event, onSuccess, onCancel }: BuyTicketProps) => {
     'pending' | 'success' | 'failed' | undefined
   >(undefined);
 
-  // Smart contract adresa (měla by být v .env)
+  // Smart contract address (should be in .env)
   const TICKET_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_TICKET_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000';
 
   const calculateFees = (price: string) => {
@@ -42,7 +42,7 @@ export const BuyTicket = ({ event, onSuccess, onCancel }: BuyTicketProps) => {
     try {
       const fees = calculateFees(event.ticketPrice);
       
-      // Generujeme reference ID pro platbu
+      // Generate reference ID for payment
       const res = await fetch('/api/initiate-ticket-purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -58,21 +58,21 @@ export const BuyTicket = ({ event, onSuccess, onCancel }: BuyTicketProps) => {
       
       const { paymentId } = await res.json();
 
-      // Platba pomocí MiniKit Pay
+      // Payment via MiniKit Pay
       const paymentResult = await MiniKit.commandsAsync.pay({
         reference: paymentId,
-        to: event.vendor, // Prodejce dostává base price
+        to: event.vendor, // Vendor receives base price
         tokens: [
           {
             symbol: Tokens.WLD,
             token_amount: tokenToDecimals(fees.basePrice, Tokens.WLD).toString(),
           }
         ],
-        description: `Vstupenka na ${event.name}`,
+        description: `Ticket for ${event.name}`,
       });
 
       if (paymentResult.finalPayload.status === 'success') {
-        // Po úspěšné platbě voláme smart contract pro mint NFT
+        // After successful payment, call smart contract to mint NFT
         const { finalPayload: transactionResult } = await MiniKit.commandsAsync.sendTransaction({
           transaction: [
             {
@@ -80,15 +80,15 @@ export const BuyTicket = ({ event, onSuccess, onCancel }: BuyTicketProps) => {
               abi: TicketNFTABI,
               functionName: 'purchaseTicket',
               args: [event.id],
-              value: tokenToDecimals(fees.totalPrice, Tokens.WLD).toString(), // V tomto případě by měl být 0, protože už jsme zaplatili
+              value: tokenToDecimals(fees.totalPrice, Tokens.WLD).toString(), // In this case should be 0, as we already paid
             },
           ],
         });
 
         if (transactionResult.status === 'success') {
           setButtonState('success');
-          // Získáme ticket ID z transaction logs (zjednodušeno)
-          onSuccess(Date.now()); // Placeholder - v reálné aplikaci bychom parsovali logs
+          // Get ticket ID from transaction logs (simplified)
+          onSuccess(Date.now()); // Placeholder - in real app we would parse logs
         } else {
           setButtonState('failed');
           setTimeout(() => setButtonState(undefined), 3000);
@@ -98,7 +98,7 @@ export const BuyTicket = ({ event, onSuccess, onCancel }: BuyTicketProps) => {
         setTimeout(() => setButtonState(undefined), 3000);
       }
     } catch (error) {
-      console.error('Chyba při nákupu vstupenky:', error);
+      console.error('Error purchasing ticket:', error);
       setButtonState('failed');
       setTimeout(() => setButtonState(undefined), 3000);
     }
@@ -108,32 +108,32 @@ export const BuyTicket = ({ event, onSuccess, onCancel }: BuyTicketProps) => {
 
   return (
     <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <h2 className="text-xl font-bold mb-4">Koupit vstupenku</h2>
+      <h2 className="text-xl font-bold mb-4">Buy Ticket</h2>
       
       <div className="space-y-4 mb-6">
         <div className="border-b pb-4">
           <h3 className="font-semibold">{event.name}</h3>
           <p className="text-sm text-gray-600">{event.location}</p>
           <p className="text-sm text-gray-600">
-            {new Date(event.date * 1000).toLocaleDateString('cs-CZ')}
+            {new Date(event.date * 1000).toLocaleDateString('en-US')}
           </p>
         </div>
         
         <div className="space-y-2">
           <div className="flex justify-between">
-            <span>Cena vstupenky:</span>
+            <span>Ticket Price:</span>
             <span>{fees.basePrice.toFixed(2)} WLD</span>
           </div>
           <div className="flex justify-between text-sm text-gray-600">
-            <span>Poplatek aplikace (2%):</span>
+            <span>App Fee (2%):</span>
             <span>{fees.appOwnerFee.toFixed(4)} WLD</span>
           </div>
           <div className="flex justify-between text-sm text-gray-600">
-            <span>Poplatek World App (1%):</span>
+            <span>World App Fee (1%):</span>
             <span>{fees.worldAppFee.toFixed(4)} WLD</span>
           </div>
           <div className="flex justify-between font-bold text-lg border-t pt-2">
-            <span>Celkem:</span>
+            <span>Total:</span>
             <span>{fees.totalPrice.toFixed(4)} WLD</span>
           </div>
         </div>
@@ -147,14 +147,14 @@ export const BuyTicket = ({ event, onSuccess, onCancel }: BuyTicketProps) => {
           onClick={onCancel}
           disabled={buttonState === 'pending'}
         >
-          Zrušit
+          Cancel
         </Button>
         
         <LiveFeedback
           label={{
-            failed: 'Nákup se nezdařil',
-            pending: 'Nakupuji...',
-            success: 'Vstupenka zakoupena!',
+            failed: 'Purchase failed',
+            pending: 'Purchasing...',
+            success: 'Ticket purchased!',
           }}
           state={buttonState}
           className="flex-1"
@@ -166,7 +166,7 @@ export const BuyTicket = ({ event, onSuccess, onCancel }: BuyTicketProps) => {
             onClick={handlePurchase}
             disabled={buttonState === 'pending'}
           >
-            Koupit vstupenku
+            Buy Ticket
           </Button>
         </LiveFeedback>
       </div>

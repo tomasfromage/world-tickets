@@ -1,61 +1,84 @@
+'use client';
+
 import { Page } from '@/components/PageLayout';
-import { Event } from '@/types/events';
 import { TopBar } from '@worldcoin/mini-apps-ui-kit-react';
 import { TicketsComponent } from '@/components/TicketsComponent';
+import { CreateEventForm } from '@/components/CreateEventForm';
+import { useEvents } from '@/hooks/useEvents';
+import { useState } from 'react';
 
-// Mock data - v reálné aplikaci by se načítalo z API/smart contractu
-const MOCK_EVENTS: Event[] = [
-  {
-    id: 1,
-    name: 'ETH Global Hackathon Prague',
-    description: 'Největší hackathon v České republice zaměřený na Ethereum ecosystem',
-    date: Math.floor(Date.now() / 1000) + 86400 * 7, // za týden
-    location: 'Praha, Česká republika',
-    ticketPrice: '50',
-    totalTickets: 500,
-    soldTickets: 157,
-    vendor: '0x1234567890123456789012345678901234567890',
-    eventType: 'Hackathon',
-  },
-  {
-    id: 2,
-    name: 'World Cup Final Watch Party',
-    description: 'Sledování finále mistrovství světa s komunitou',
-    date: Math.floor(Date.now() / 1000) + 86400 * 3, // za 3 dny
-    location: 'São Paulo, Brazílie',
-    ticketPrice: '25',
-    totalTickets: 200,
-    soldTickets: 89,
-    vendor: '0x2345678901234567890123456789012345678901',
-    eventType: 'Sport',
-  },
-  {
-    id: 3,
-    name: 'Blockchain Conference 2024',
-    description: 'Konference o budoucnosti blockchainu a decentralizovaných technologií',
-    date: Math.floor(Date.now() / 1000) + 86400 * 14, // za 2 týdny
-    location: 'Singapore',
-    ticketPrice: '150',
-    totalTickets: 1000,
-    soldTickets: 432,
-    vendor: '0x3456789012345678901234567890123456789012',
-    eventType: 'Conference',
-  },
-];
+// Smart contract address - in production would be in environment variables
+const TICKET_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_TICKET_CONTRACT_ADDRESS || '0x...';
 
 export default function TicketsPage() {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const { events, isLoading, error, addEvent, refreshEvents } = useEvents({ 
+    contractAddress: TICKET_CONTRACT_ADDRESS 
+  });
+
+  const handleEventCreated = (newEvent: any) => {
+    addEvent(newEvent);
+    setShowCreateForm(false);
+    // We can also reload events from blockchain for current data
+    setTimeout(() => refreshEvents(), 2000); // Pause for transaction confirmation
+  };
+
+  if (error) {
+    return (
+      <>
+        <Page.Header className="p-0">
+          <TopBar title="🎫 Tickets" />
+        </Page.Header>
+        
+        <Page.Main className="flex flex-col gap-4 mb-16">
+          <div className="text-center text-red-500 p-4">
+            <p>Error loading events:</p>
+            <p className="text-sm">{error}</p>
+            <button 
+              onClick={refreshEvents}
+              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+            >
+              Try Again
+            </button>
+          </div>
+        </Page.Main>
+      </>
+    );
+  }
+
   return (
     <>
       <Page.Header className="p-0">
-        <TopBar
-          title="🎫 Tickets"
-        />
+        <TopBar title="🎫 Tickets" />
       </Page.Header>
       
       <Page.Main className="flex flex-col gap-4 mb-16">
+        {/* Button for creating new event */}
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">
+            {isLoading ? 'Loading events...' : `Available Events (${events.length})`}
+          </h2>
+          <button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            {showCreateForm ? 'Cancel' : '+ Create Event'}
+          </button>
+        </div>
+
+        {/* Form for creating event */}
+        {showCreateForm && (
+          <CreateEventForm
+            contractAddress={TICKET_CONTRACT_ADDRESS}
+            onEventCreated={handleEventCreated}
+          />
+        )}
+
+        {/* Events list */}
         <TicketsComponent 
-          events={MOCK_EVENTS}
+          events={events}
           userAddress=""
+          isLoading={isLoading}
         />
       </Page.Main>
     </>

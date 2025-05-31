@@ -10,13 +10,15 @@ interface EventsListProps {
   onEventSelect: (event: Event) => void;
   showCreateButton?: boolean;
   onCreateEvent?: () => void;
+  isLoading?: boolean;
 }
 
 export const EventsList = ({ 
   events, 
   onEventSelect, 
   showCreateButton = false,
-  onCreateEvent 
+  onCreateEvent,
+  isLoading = false
 }: EventsListProps) => {
   const [filteredEvents, setFilteredEvents] = useState<Event[]>(events);
   const [filter, setFilter] = useState<EventFilter>({});
@@ -56,7 +58,7 @@ export const EventsList = ({
   }, [events, filter]);
 
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString('cs-CZ', {
+    return new Date(timestamp * 1000).toLocaleDateString('en-US', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -76,18 +78,46 @@ export const EventsList = ({
     return colors[type as keyof typeof colors] || '📅';
   };
 
+  // Skeleton component for loading
+  const EventSkeleton = () => (
+    <div className="p-4 border rounded-lg bg-white animate-pulse">
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-between items-start">
+          <div className="h-6 bg-gray-300 rounded w-2/3"></div>
+          <div className="h-6 bg-gray-300 rounded w-20"></div>
+        </div>
+        
+        <div className="h-4 bg-gray-300 rounded w-full"></div>
+        <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+        
+        <div className="flex flex-col gap-2">
+          <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-300 rounded w-1/3"></div>
+          <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+        </div>
+        
+        <div className="flex justify-between items-center pt-2 border-t">
+          <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+          <div className="w-full max-w-xs bg-gray-200 rounded-full h-2 ml-4">
+            <div className="bg-gray-300 h-2 rounded-full w-1/3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="w-full space-y-4">
       <div className="flex flex-col gap-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold">Dostupné události</h2>
+          <h2 className="text-xl font-bold">Available Events</h2>
           {showCreateButton && (
             <Button 
               variant="primary" 
               size="sm" 
               onClick={onCreateEvent}
             >
-              Vytvořit událost
+              Create Event
             </Button>
           )}
         </div>
@@ -97,29 +127,36 @@ export const EventsList = ({
             className="px-3 py-1 border rounded text-sm"
             value={filter.eventType || ''}
             onChange={(e) => setFilter(prev => ({ ...prev, eventType: e.target.value || undefined }))}
+            disabled={isLoading}
           >
-            <option value="">Všechny typy</option>
+            <option value="">All Types</option>
             <option value="Sport">Sport</option>
-            <option value="Concert">Koncert</option>
+            <option value="Concert">Concert</option>
             <option value="Hackathon">Hackathon</option>
-            <option value="Conference">Konference</option>
-            <option value="Other">Ostatní</option>
+            <option value="Conference">Conference</option>
+            <option value="Other">Other</option>
           </select>
           
           <input
             type="text"
-            placeholder="Místo..."
+            placeholder="Location..."
             className="px-3 py-1 border rounded text-sm"
             value={filter.location || ''}
             onChange={(e) => setFilter(prev => ({ ...prev, location: e.target.value || undefined }))}
+            disabled={isLoading}
           />
         </div>
       </div>
 
       <div className="grid gap-4">
-        {filteredEvents.length === 0 ? (
+        {isLoading ? (
+          // Show loading skeletons
+          Array.from({ length: 3 }).map((_, index) => (
+            <EventSkeleton key={index} />
+          ))
+        ) : filteredEvents.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            Žádné události nenalezeny
+            No events found
           </div>
         ) : (
           filteredEvents.map((event) => (
@@ -159,7 +196,7 @@ export const EventsList = ({
                 
                 <div className="flex justify-between items-center pt-2 border-t">
                   <span className="text-sm text-gray-500">
-                    {event.soldTickets}/{event.totalTickets} prodáno
+                    {event.soldTickets}/{event.totalTickets} sold
                   </span>
                   <div className="w-full max-w-xs bg-gray-200 rounded-full h-2 ml-4">
                     <div 
