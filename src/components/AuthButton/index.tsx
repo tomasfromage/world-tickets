@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 export const AuthButton = () => {
   const [isPending, setIsPending] = useState(false);
   const isInstalled = MiniKit.isInstalled();
+  console.log('isInstalled', isInstalled)
 
   const onClick = useCallback(async () => {
     if (!isInstalled || isPending) {

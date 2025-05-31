@@ -17,7 +17,7 @@ export default async function Home() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-4">🎫 Tickets</h1>
           <p className="text-gray-600 mb-6">
-            Decentralizovaná platforma pro nákup a prodej vstupenek
+            Next-gen platform for ticket sales
           </p>
         </div>
         <AuthButton />
