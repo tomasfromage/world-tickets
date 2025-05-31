@@ -1,10 +1,9 @@
-import { auth } from '@/auth';
 import { Page } from '@/components/PageLayout';
 import { EventsList } from '@/components/EventsList';
 import { BuyTicket } from '@/components/BuyTicket';
 import { TicketVerification } from '@/components/TicketVerification';
 import { Event } from '@/types/events';
-import { Marble, TopBar, Tabs } from '@worldcoin/mini-apps-ui-kit-react';
+import { TopBar, Tabs } from '@worldcoin/mini-apps-ui-kit-react';
 import { TicketsComponent } from '@/components/TicketsComponent';
 
 // Mock data - v reálné aplikaci by se načítalo z API/smart contractu
@@ -47,29 +46,19 @@ const MOCK_EVENTS: Event[] = [
   },
 ];
 
-export default async function TicketsPage() {
-  const session = await auth();
-
+export default function TicketsPage() {
   return (
     <>
       <Page.Header className="p-0">
         <TopBar
           title="🎫 Tickets"
-          endAdornment={
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold capitalize">
-                {session?.user.username}
-              </p>
-              <Marble src={session?.user.profilePictureUrl} className="w-12" />
-            </div>
-          }
         />
       </Page.Header>
       
       <Page.Main className="flex flex-col gap-4 mb-16">
         <TicketsComponent 
           events={MOCK_EVENTS}
-          userAddress={session?.user?.walletAddress || ''}
+          userAddress=""
         />
       </Page.Main>
     </>
