@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Shield, Sparks } from 'iconoir-react';
 import contractAddress from '../../../../contract-address.json';
+import { Event } from '@/types/events';
 
 export default function Home() {
   const router = useRouter();
@@ -71,7 +72,7 @@ export default function Home() {
     }
   };
 
-  const handleEventSelect = (event: any) => {
+  const handleEventSelect = (event: Event) => {
     // Navigate to event detail
     router.push(`/tickets?eventId=${event.id}`);
   };
