@@ -14,11 +14,11 @@
   },
   "dependencies": {
     "@worldcoin/mini-apps-ui-kit-react": "^1.0.2",
-    "@worldcoin/minikit-js": "latest",
+    "@worldcoin/minikit-js": "^1.9.4",
     "@worldcoin/minikit-react": "latest",
     "clsx": "^2.1.1",
     "iconoir-react": "^7.11.0",
-    "next": "15.2.3",
+    "next": "^15.3.3",
     "next-auth": "^5.0.0-beta.25",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -28,7 +28,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^22.15.29",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eruda": "^3.4.1",
