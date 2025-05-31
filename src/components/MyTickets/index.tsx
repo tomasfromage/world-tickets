@@ -84,7 +84,7 @@ export function MyTickets({ contractAddress }: MyTicketsProps) {
   if (tickets.length === 0) {
     return (
       <div className="p-6 text-center">
-        <p className="text-gray-600 mb-4">You don't have any tickets yet.</p>
+        <p className="text-gray-600 mb-4">You don&apos;t have any tickets yet.</p>
         <p className="text-sm text-gray-500">Purchase tickets for events to see them here!</p>
       </div>
     );
