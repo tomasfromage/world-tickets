@@ -2,7 +2,6 @@
 
 import { ListItem } from '@worldcoin/mini-apps-ui-kit-react';
 import { MiniKit } from '@worldcoin/minikit-js';
-import { useMiniKit } from '@worldcoin/minikit-js/minikit-provider';
 import { useEffect, useState } from 'react';
 /**
  * This component is an example of how to view the permissions of a user
@@ -12,7 +11,7 @@ import { useEffect, useState } from 'react';
 
 export const ViewPermissions = () => {
   const [permissions, setPermissions] = useState<Record<string, boolean>>({});
-  const { isInstalled } = useMiniKit();
+  const isInstalled = MiniKit.isInstalled();
 
   useEffect(() => {
     const fetchPermissions = async () => {
