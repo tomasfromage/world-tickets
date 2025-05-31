@@ -137,17 +137,19 @@ export default function Home() {
         {(!showVerification || isVerified) && (
           <div className="w-full">
             {/* Hero Section */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-12 mb-8">
+            <div className="px-6 py-16">
               <div className="max-w-md mx-auto text-center">
-                <div className="flex items-center justify-center mb-4">
-                  <Sparks className="w-8 h-8 mr-2" />
-                  <h1 className="text-3xl font-bold">Tickets</h1>
+                <div className="flex items-center justify-center mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mr-3">
+                    <Sparks className="w-6 h-6 text-white" />
+                  </div>
+                  <h1 className="text-4xl font-bold text-gray-900">Tickets</h1>
                 </div>
-                <p className="text-blue-100 text-lg mb-6">
+                <p className="text-gray-600 text-lg mb-8 leading-relaxed">
                   Discover amazing events and buy tickets securely on blockchain
                 </p>
                 {isVerified && (
-                  <div className="inline-flex items-center bg-green-500 text-white px-4 py-2 rounded-full text-sm font-medium">
+                  <div className="inline-flex items-center bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-medium border border-green-200 mb-8">
                     <Shield className="w-4 h-4 mr-2" />
                     Verified with World ID
                   </div>
@@ -156,7 +158,7 @@ export default function Home() {
             </div>
 
             {/* Content Section */}
-            <div className="px-6">
+            <div className="px-6 min-h-screen">
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-center">
                   <p className="font-medium">Error loading events</p>
@@ -165,10 +167,10 @@ export default function Home() {
               )}
 
               {/* Events Section */}
-              <div className="mb-8">
+              <div className="mb-8 pt-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">Available Events</h2>
-                  <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
                     {events.length} {events.length === 1 ? 'event' : 'events'}
                   </div>
                 </div>

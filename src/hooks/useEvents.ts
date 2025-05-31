@@ -92,7 +92,7 @@ export function useEvents({ contractAddress }: UseEventsProps) {
       setEvents(eventsFromContract);
     } catch (err) {
       console.error('Error loading events:', err);
-      setError('Failed to load events from blockchain');
+      setError('Failed to load events from blockchain. Error: ' + err);
     } finally {
       setIsLoading(false);
     }
