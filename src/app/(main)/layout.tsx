@@ -9,7 +9,7 @@ export default function MainLayout({
   return (
     <Page>
       {children}
-      <Page.Footer className="px-0 fixed bottom-0 w-full bg-white">
+      <Page.Footer className="px-0 fixed w-full bg-white bottom-0 border-t border-gray-200 pb-safe">
         <Navigation />
       </Page.Footer>
     </Page>
