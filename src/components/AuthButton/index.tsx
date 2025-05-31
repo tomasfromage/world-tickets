@@ -1,7 +1,7 @@
 'use client';
 import { walletAuth } from '@/auth/wallet';
 import { Button, LiveFeedback } from '@worldcoin/mini-apps-ui-kit-react';
-import { useMiniKit } from '@worldcoin/minikit-js/minikit-provider';
+import { MiniKit } from '@worldcoin/minikit-js/minikit-provider';
 import { useCallback, useEffect, useState } from 'react';
 
 /**
@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
  */
 export const AuthButton = () => {
   const [isPending, setIsPending] = useState(false);
-  const { isInstalled } = useMiniKit();
+  const isInstalled = MiniKit.isInstalled();
 
   const onClick = useCallback(async () => {
     if (!isInstalled || isPending) {
