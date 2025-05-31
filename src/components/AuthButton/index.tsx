@@ -1,7 +1,7 @@
 'use client';
 import { walletAuth } from '@/auth/wallet';
 import { Button, LiveFeedback } from '@worldcoin/mini-apps-ui-kit-react';
-import { MiniKit } from '@worldcoin/minikit-js/minikit-provider';
+import { MiniKit } from '@worldcoin/minikit-js';
 import { useCallback, useEffect, useState } from 'react';
 
 /**
