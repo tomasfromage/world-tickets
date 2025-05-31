@@ -5,6 +5,7 @@ import { TopBar } from '@worldcoin/mini-apps-ui-kit-react';
 import { TicketsComponent } from '@/components/TicketsComponent';
 import { CreateEventForm } from '@/components/CreateEventForm';
 import { useEvents } from '@/hooks/useEvents';
+import { Event } from '@/types/events';
 import { useState } from 'react';
 
 // Smart contract address - in production would be in environment variables
@@ -16,7 +17,7 @@ export default function TicketsPage() {
     contractAddress: TICKET_CONTRACT_ADDRESS 
   });
 
-  const handleEventCreated = (newEvent: any) => {
+  const handleEventCreated = (newEvent: Event) => {
     addEvent(newEvent);
     setShowCreateForm(false);
     // We can also reload events from blockchain for current data

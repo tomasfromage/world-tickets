@@ -8,6 +8,19 @@ interface UseEventsProps {
   contractAddress: string;
 }
 
+// Type for smart contract getEvent return value
+type ContractEventData = [
+  string, // name
+  string, // description  
+  bigint, // date
+  string, // location
+  bigint, // price
+  bigint, // totalTickets
+  bigint, // soldTickets
+  string, // vendor
+  string  // eventType
+];
+
 export function useEvents({ contractAddress }: UseEventsProps) {
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,19 +70,19 @@ export function useEvents({ contractAddress }: UseEventsProps) {
               abi: TicketNFTABI,
               functionName: 'getEvent',
               args: [eventId],
-            }) as any[];
+            }) as ContractEventData;
 
             // Assuming getEvent return structure: [name, description, date, location, price, totalTickets, soldTickets, vendor, eventType]
             return {
               id: Number(eventId),
-              name: eventDetails[0] as string,
-              description: eventDetails[1] as string,
+              name: eventDetails[0],
+              description: eventDetails[1],
               date: Number(eventDetails[2]),
-              location: eventDetails[3] as string,
+              location: eventDetails[3],
               ticketPrice: (Number(eventDetails[4]) / 1e18).toString(), // Convert from Wei
               totalTickets: Number(eventDetails[5]),
               soldTickets: Number(eventDetails[6]),
-              vendor: eventDetails[7] as string,
+              vendor: eventDetails[7],
               eventType: eventDetails[8] as "Conference" | "Sport" | "Concert" | "Hackathon" | "Other",
             };
           } catch (contractError) {
