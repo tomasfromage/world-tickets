@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@worldcoin/mini-apps-ui-kit-react';
-import { Home, CreditCard, User, Settings } from 'iconoir-react';
+
+import { Home, CreditCard, User } from 'iconoir-react';
 import { usePathname, useRouter } from 'next/navigation';
 
 /**

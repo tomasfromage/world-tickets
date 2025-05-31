@@ -1,7 +1,7 @@
 'use client';
 
 import { Event, EventFilter } from '@/types/events';
-import { Button, ListItem } from '@worldcoin/mini-apps-ui-kit-react';
+import { Button } from '@worldcoin/mini-apps-ui-kit-react';
 import { Calendar, MapPin, DollarCircle } from 'iconoir-react';
 import { useState, useEffect } from 'react';
 

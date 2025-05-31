@@ -34,7 +34,7 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
   const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
 
   const TICKET_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_TICKET_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000';
-  const APP_ID = process.env.NEXT_PUBLIC_APP_ID as `app_${string}`;
+  //const APP_ID = process.env.NEXT_PUBLIC_APP_ID as `app_${string}`;
 
   const handleVerifyAttendee = async () => {
     setVerificationState('verifying');
@@ -43,7 +43,7 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
     try {
       // Krok 1: Ověření World ID pomocí MiniKit Verify
       const verifyResult = await MiniKit.commandsAsync.verify({
-        action: 'verify-event-entry',
+        action: 'verification',
         signal: eventId.toString(),
       });
 
@@ -57,7 +57,7 @@ export const TicketVerification = ({ eventId, onVerificationComplete }: TicketVe
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           payload: verifyResult.finalPayload,
-          action: 'verify-event-entry',
+          action: 'verification',
           signal: eventId.toString(),
         }),
       });

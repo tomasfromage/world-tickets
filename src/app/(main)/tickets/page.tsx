@@ -1,9 +1,6 @@
 import { Page } from '@/components/PageLayout';
-import { EventsList } from '@/components/EventsList';
-import { BuyTicket } from '@/components/BuyTicket';
-import { TicketVerification } from '@/components/TicketVerification';
 import { Event } from '@/types/events';
-import { TopBar, Tabs } from '@worldcoin/mini-apps-ui-kit-react';
+import { TopBar } from '@worldcoin/mini-apps-ui-kit-react';
 import { TicketsComponent } from '@/components/TicketsComponent';
 
 // Mock data - v reálné aplikaci by se načítalo z API/smart contractu
