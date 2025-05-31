@@ -1,9 +1,9 @@
 'use client';
 
 import TicketNFTABI from '@/abi/TicketNFT.json';
-import { Event, PROFIT_SHARING } from '@/types/events';
+import { Event } from '@/types/events';
 import { Button, LiveFeedback } from '@worldcoin/mini-apps-ui-kit-react';
-import { MiniKit, Tokens, tokenToDecimals } from '@worldcoin/minikit-js';
+import { MiniKit, VerificationLevel, ISuccessResult } from '@worldcoin/minikit-js';
 import { useState } from 'react';
 
 interface BuyTicketProps {
@@ -16,84 +16,83 @@ export const BuyTicket = ({ event, onSuccess, onCancel }: BuyTicketProps) => {
   const [buttonState, setButtonState] = useState<
     'pending' | 'success' | 'failed' | undefined
   >(undefined);
+  const [isVerified, setIsVerified] = useState(false);
+  const [verificationData, setVerificationData] = useState<any>(null);
 
-  // Smart contract address (should be in .env)
+  // Smart contract address
   const TICKET_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_TICKET_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000';
 
-  const calculateFees = (price: string) => {
-    const basePrice = parseFloat(price);
-    const appOwnerFee = (basePrice * PROFIT_SHARING.appOwner) / 10000; // 2%
-    const worldAppFee = (basePrice * PROFIT_SHARING.worldApp) / 10000; // 1%
-    const totalPrice = basePrice + appOwnerFee + worldAppFee;
-    
-    return {
-      basePrice,
-      appOwnerFee,
-      worldAppFee,
-      totalPrice
-    };
+  // Handle World ID verification
+  const handleVerification = async () => {
+    try {
+      console.log('Starting World ID verification...');
+      
+      const result = await MiniKit.commandsAsync.verify({
+        action: 'ticket-purchase', // Unique action for ticket purchasing
+        verification_level: VerificationLevel.Device, // Device level verification
+        signal: `${event.id}`, // Use event ID as signal
+      });
+
+      if (result.finalPayload && result.finalPayload.status === 'success') {
+        const successPayload = result.finalPayload as ISuccessResult;
+        console.log('World ID verification successful:', successPayload);
+        
+        setIsVerified(true);
+        setVerificationData(successPayload);
+      } else {
+        console.error('World ID verification failed:', result.finalPayload);
+        alert('World ID verification failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error during World ID verification:', error);
+      alert('Error during verification. Please try again.');
+    }
   };
 
+  // Handle ticket purchase after verification
   const handlePurchase = async () => {
+    if (!isVerified) {
+      alert('Please verify your World ID first!');
+      return;
+    }
+    
     if (buttonState === 'pending') return;
     
     setButtonState('pending');
     
     try {
-      const fees = calculateFees(event.ticketPrice);
+      // Convert price to Wei (18 decimals)
+      const priceInWei = BigInt(parseFloat(event.ticketPrice) * 1e18).toString();
       
-      // Generate reference ID for payment
-      const res = await fetch('/api/initiate-ticket-purchase', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          eventId: event.id,
-          basePrice: fees.basePrice,
-          fees: {
-            appOwner: fees.appOwnerFee,
-            worldApp: fees.worldAppFee
-          }
-        }),
-      });
-      
-      const { paymentId } = await res.json();
+      console.log('Purchasing ticket for event:', event.id);
+      console.log('Price in Wei:', priceInWei);
 
-      // Payment via MiniKit Pay
-      const paymentResult = await MiniKit.commandsAsync.pay({
-        reference: paymentId,
-        to: event.vendor, // Vendor receives base price
-        tokens: [
+      // Call smart contract to purchase ticket
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [
           {
-            symbol: Tokens.WLD,
-            token_amount: tokenToDecimals(fees.basePrice, Tokens.WLD).toString(),
-          }
+            address: TICKET_CONTRACT_ADDRESS,
+            abi: TicketNFTABI,
+            functionName: 'purchaseTicket',
+            args: [event.id],
+            value: priceInWei, // Payment amount in Wei
+          },
         ],
-        description: `Ticket for ${event.name}`,
       });
 
-      if (paymentResult.finalPayload.status === 'success') {
-        // After successful payment, call smart contract to mint NFT
-        const { finalPayload: transactionResult } = await MiniKit.commandsAsync.sendTransaction({
-          transaction: [
-            {
-              address: TICKET_CONTRACT_ADDRESS,
-              abi: TicketNFTABI,
-              functionName: 'purchaseTicket',
-              args: [event.id],
-              value: tokenToDecimals(fees.totalPrice, Tokens.WLD).toString(), // In this case should be 0, as we already paid
-            },
-          ],
-        });
-
-        if (transactionResult.status === 'success') {
-          setButtonState('success');
-          // Get ticket ID from transaction logs (simplified)
-          onSuccess(Date.now()); // Placeholder - in real app we would parse logs
-        } else {
-          setButtonState('failed');
-          setTimeout(() => setButtonState(undefined), 3000);
-        }
+      if (finalPayload && finalPayload.status === 'success') {
+        console.log('Ticket purchase successful:', finalPayload);
+        setButtonState('success');
+        
+        // Get ticket ID from transaction (simplified - in real app parse transaction logs)
+        const ticketId = Date.now(); // Placeholder
+        onSuccess(ticketId);
+        
+        setTimeout(() => {
+          setButtonState(undefined);
+        }, 3000);
       } else {
+        console.error('Ticket purchase failed:', finalPayload);
         setButtonState('failed');
         setTimeout(() => setButtonState(undefined), 3000);
       }
@@ -104,38 +103,57 @@ export const BuyTicket = ({ event, onSuccess, onCancel }: BuyTicketProps) => {
     }
   };
 
-  const fees = calculateFees(event.ticketPrice);
-
   return (
     <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <h2 className="text-xl font-bold mb-4">Buy Ticket</h2>
+      <h2 className="text-xl font-bold mb-4">🎫 Buy Ticket</h2>
       
       <div className="space-y-4 mb-6">
         <div className="border-b pb-4">
           <h3 className="font-semibold">{event.name}</h3>
-          <p className="text-sm text-gray-600">{event.location}</p>
+          <p className="text-sm text-gray-600">📍 {event.location}</p>
           <p className="text-sm text-gray-600">
-            {new Date(event.date * 1000).toLocaleDateString('en-US')}
+            📅 {new Date(event.date * 1000).toLocaleDateString('cs-CZ')}
+          </p>
+          <p className="text-sm text-gray-600">
+            🎭 {event.eventType}
           </p>
         </div>
         
         <div className="space-y-2">
-          <div className="flex justify-between">
+          <div className="flex justify-between text-lg font-bold">
             <span>Ticket Price:</span>
-            <span>{fees.basePrice.toFixed(2)} WLD</span>
+            <span>{event.ticketPrice} WLD</span>
           </div>
-          <div className="flex justify-between text-sm text-gray-600">
-            <span>App Fee (2%):</span>
-            <span>{fees.appOwnerFee.toFixed(4)} WLD</span>
+          <div className="text-sm text-gray-600">
+            Available tickets: {event.totalTickets - event.soldTickets} / {event.totalTickets}
           </div>
-          <div className="flex justify-between text-sm text-gray-600">
-            <span>World App Fee (1%):</span>
-            <span>{fees.worldAppFee.toFixed(4)} WLD</span>
-          </div>
-          <div className="flex justify-between font-bold text-lg border-t pt-2">
-            <span>Total:</span>
-            <span>{fees.totalPrice.toFixed(4)} WLD</span>
-          </div>
+        </div>
+
+        {/* World ID Verification Section */}
+        <div className="border rounded-lg p-4 bg-gray-50">
+          <h3 className="font-semibold mb-2">🌍 World ID Verification Required</h3>
+          {!isVerified ? (
+            <div>
+              <p className="text-sm text-gray-600 mb-3">
+                You need to verify your World ID to purchase tickets.
+              </p>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                onClick={handleVerification}
+              >
+                Verify with World ID
+              </Button>
+            </div>
+          ) : (
+            <div className="text-green-600">
+              <p className="text-sm">✅ World ID verified successfully!</p>
+              <p className="text-xs text-gray-500">
+                Nullifier hash: {verificationData?.nullifier_hash?.slice(0, 8)}...
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -164,9 +182,9 @@ export const BuyTicket = ({ event, onSuccess, onCancel }: BuyTicketProps) => {
             size="lg"
             className="w-full"
             onClick={handlePurchase}
-            disabled={buttonState === 'pending'}
+            disabled={buttonState === 'pending' || !isVerified}
           >
-            Buy Ticket
+            {isVerified ? 'Buy Ticket' : 'Verify World ID First'}
           </Button>
         </LiveFeedback>
       </div>
