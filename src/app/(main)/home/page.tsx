@@ -16,6 +16,7 @@ export default function Home() {
   // Use new utility function to get contract address
   const [contractAddress, setContractAddress] = useState<string>('');
   const [contractError, setContractError] = useState<string | null>(null);
+  console.log(contractError);
 
   // Initialize contract address
   useEffect(() => {

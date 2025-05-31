@@ -172,12 +172,14 @@ export default function TicketsPage() {
               />
             )}
 
-            {/* Events list */}
-            <TicketsComponent 
-              events={events}
-              userAddress=""
-              isLoading={isLoading}
-            />
+            {/* Events list - only show when form is not displayed */}
+            {!showCreateForm && (
+              <TicketsComponent 
+                events={events}
+                userAddress=""
+                isLoading={isLoading}
+              />
+            )}
           </>
         )}
 
