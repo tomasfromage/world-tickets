@@ -4,7 +4,6 @@ import { Event } from '@/types/events';
 import { EventsList } from '@/components/EventsList';
 import { BuyTicket } from '@/components/BuyTicket';
 import { TicketVerification } from '@/components/TicketVerification';
-import { Button } from '@worldcoin/mini-apps-ui-kit-react';
 import { useState } from 'react';
 
 interface TicketsComponentProps {
@@ -12,7 +11,7 @@ interface TicketsComponentProps {
   userAddress: string;
 }
 
-export const TicketsComponent = ({ events, userAddress }: TicketsComponentProps) => {
+export const TicketsComponent = ({ events }: TicketsComponentProps) => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [showBuyTicket, setShowBuyTicket] = useState(false);
   const [activeTab, setActiveTab] = useState<'events' | 'my-tickets' | 'verify'>('events');
