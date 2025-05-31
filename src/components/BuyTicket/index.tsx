@@ -12,12 +12,20 @@ interface BuyTicketProps {
   onCancel: () => void;
 }
 
+// Define type for verification data
+interface VerificationData {
+  nullifier_hash: string;
+  merkle_root: string;
+  proof: string;
+  verification_level: string;
+}
+
 export const BuyTicket = ({ event, onSuccess, onCancel }: BuyTicketProps) => {
   const [buttonState, setButtonState] = useState<
     'pending' | 'success' | 'failed' | undefined
   >(undefined);
   const [isVerified, setIsVerified] = useState(false);
-  const [verificationData, setVerificationData] = useState<any>(null);
+  const [verificationData, setVerificationData] = useState<VerificationData | null>(null);
 
   // Smart contract address
   const TICKET_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_TICKET_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000';
@@ -38,7 +46,12 @@ export const BuyTicket = ({ event, onSuccess, onCancel }: BuyTicketProps) => {
         console.log('World ID verification successful:', successPayload);
         
         setIsVerified(true);
-        setVerificationData(successPayload);
+        setVerificationData({
+          nullifier_hash: successPayload.nullifier_hash || '',
+          merkle_root: successPayload.merkle_root || '',
+          proof: successPayload.proof || '',
+          verification_level: successPayload.verification_level || 'device',
+        });
       } else {
         console.error('World ID verification failed:', result.finalPayload);
         alert('World ID verification failed. Please try again.');

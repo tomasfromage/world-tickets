@@ -8,6 +8,17 @@ interface UseUserTicketsProps {
   userAddress?: string;
 }
 
+// Type for smart contract getTicketInfo return value
+interface ContractTicketInfo {
+  ticketId: bigint;
+  eventId: bigint;
+  owner: string;
+  isForSale: boolean;
+  salePrice: bigint;
+  specificBuyer: string;
+  hasAttended: boolean;
+}
+
 // Define WorldChain Sepolia testnet
 const worldchainSepolia = defineChain({
   id: 4801,
@@ -73,7 +84,7 @@ export function useUserTickets({ contractAddress, userAddress }: UseUserTicketsP
           abi: TicketNFTABI,
           functionName: 'getTicketInfo',
           args: [ticketId],
-        }) as any;
+        }) as ContractTicketInfo;
 
         return {
           ticketId: Number(ticketInfo.ticketId),

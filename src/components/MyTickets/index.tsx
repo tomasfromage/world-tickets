@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useUserTickets } from '@/hooks/useUserTickets';
 import { useEvents } from '@/hooks/useEvents';
-import { MiniKit } from '@worldcoin/minikit-js';
 import { Button } from '@worldcoin/mini-apps-ui-kit-react';
 import { Ticket, Event } from '@/types/events';
 
