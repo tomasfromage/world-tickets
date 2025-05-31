@@ -5,18 +5,35 @@ import { TopBar } from '@worldcoin/mini-apps-ui-kit-react';
 import { TicketsComponent } from '@/components/TicketsComponent';
 import { CreateEventForm } from '@/components/CreateEventForm';
 import { MyTickets } from '@/components/MyTickets';
+import { BlockchainDiagnostic } from '@/components/BlockchainDiagnostic';
 import { useEvents } from '@/hooks/useEvents';
+import { getValidatedContractAddress } from '@/utils/contract';
 import { Event } from '@/types/events';
-import { useState } from 'react';
-
-// Smart contract address - in production would be in environment variables
-const TICKET_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_TICKET_CONTRACT_ADDRESS || '0x...';
+import { useState, useEffect } from 'react';
 
 export default function TicketsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [activeTab, setActiveTab] = useState<'events' | 'myTickets'>('events');
+  const [activeTab, setActiveTab] = useState<'events' | 'myTickets' | 'diagnostic'>('events');
+  
+  // Use new utility function to get contract address
+  const [contractAddress, setContractAddress] = useState<string>('');
+  const [contractError, setContractError] = useState<string | null>(null);
+
+  // Initialize contract address
+  useEffect(() => {
+    try {
+      const address = getValidatedContractAddress();
+      setContractAddress(address);
+      console.log('Tickets: Using contract address:', address);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error getting contract address';
+      setContractError(errorMsg);
+      console.error('Tickets: Error getting contract address:', error);
+    }
+  }, []);
+
   const { events, isLoading, error, addEvent, refreshEvents } = useEvents({ 
-    contractAddress: TICKET_CONTRACT_ADDRESS 
+    contractAddress 
   });
 
   const handleEventCreated = (newEvent: Event) => {
@@ -25,6 +42,47 @@ export default function TicketsPage() {
     // We can also reload events from blockchain for current data
     setTimeout(() => refreshEvents(), 2000); // Pause for transaction confirmation
   };
+
+  // Display contract address error
+  if (contractError) {
+    return (
+      <>
+        <Page.Header className="p-0">
+          <TopBar title="🎫 Tickets" />
+        </Page.Header>
+        
+        <Page.Main className="flex flex-col gap-4 mb-16">
+          <div className="text-center text-red-500 p-4">
+            <p>Contract configuration error:</p>
+            <p className="text-sm">{contractError}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+            >
+              Reload Page
+            </button>
+          </div>
+        </Page.Main>
+      </>
+    );
+  }
+
+  // Waiting for contract address to load
+  if (!contractAddress) {
+    return (
+      <>
+        <Page.Header className="p-0">
+          <TopBar title="🎫 Tickets" />
+        </Page.Header>
+        
+        <Page.Main className="flex flex-col gap-4 mb-16">
+          <div className="text-center p-4">
+            <p>Loading contract configuration...</p>
+          </div>
+        </Page.Main>
+      </>
+    );
+  }
 
   if (error) {
     return (
@@ -37,6 +95,7 @@ export default function TicketsPage() {
           <div className="text-center text-red-500 p-4">
             <p>Error loading events:</p>
             <p className="text-sm">{error}</p>
+            <p className="text-xs mt-2">Contract address: {contractAddress}</p>
             <button 
               onClick={refreshEvents}
               className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
@@ -56,27 +115,37 @@ export default function TicketsPage() {
       </Page.Header>
       
       <Page.Main className="flex flex-col gap-4 mb-16">
-        {/* Tab Navigation */}
+        {/* Navigation tabs */}
         <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
           <button
             onClick={() => setActiveTab('events')}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'events'
-                ? 'bg-white text-blue-600 shadow-sm'
+              activeTab === 'events' 
+                ? 'bg-white text-blue-600 shadow-sm' 
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            🎪 Available Events
+            Events
           </button>
           <button
             onClick={() => setActiveTab('myTickets')}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'myTickets'
-                ? 'bg-white text-blue-600 shadow-sm'
+              activeTab === 'myTickets' 
+                ? 'bg-white text-blue-600 shadow-sm' 
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            🎫 My Tickets
+            My Tickets
+          </button>
+          <button
+            onClick={() => setActiveTab('diagnostic')}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'diagnostic' 
+                ? 'bg-white text-blue-600 shadow-sm' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Diagnostic
           </button>
         </div>
 
@@ -98,7 +167,7 @@ export default function TicketsPage() {
             {/* Form for creating event */}
             {showCreateForm && (
               <CreateEventForm
-                contractAddress={TICKET_CONTRACT_ADDRESS}
+                contractAddress={contractAddress}
                 onEventCreated={handleEventCreated}
               />
             )}
@@ -113,7 +182,11 @@ export default function TicketsPage() {
         )}
 
         {activeTab === 'myTickets' && (
-          <MyTickets contractAddress={TICKET_CONTRACT_ADDRESS} />
+          <MyTickets contractAddress={contractAddress} />
+        )}
+
+        {activeTab === 'diagnostic' && (
+          <BlockchainDiagnostic />
         )}
       </Page.Main>
     </>

@@ -7,13 +7,31 @@ import { MiniKit, VerificationLevel } from '@worldcoin/minikit-js';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Shield, Sparks } from 'iconoir-react';
-import contractAddress from '../../../../contract-address.json';
+import { getValidatedContractAddress } from '@/utils/contract';
 import { Event } from '@/types/events';
 
 export default function Home() {
   const router = useRouter();
-  const { events, isLoading, error } = useEvents({ 
-    contractAddress: contractAddress.address 
+  
+  // Use new utility function to get contract address
+  const [contractAddress, setContractAddress] = useState<string>('');
+  const [contractError, setContractError] = useState<string | null>(null);
+
+  // Initialize contract address
+  useEffect(() => {
+    try {
+      const address = getValidatedContractAddress();
+      setContractAddress(address);
+      console.log('Home: Using contract address:', address);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error getting contract address';
+      setContractError(errorMsg);
+      console.error('Home: Error getting contract address:', error);
+    }
+  }, []);
+
+  const { events, isLoading, error, refreshEvents } = useEvents({ 
+    contractAddress 
   });
 
   const [isVerified, setIsVerified] = useState(false);
@@ -24,13 +42,13 @@ export default function Home() {
   useEffect(() => {
     // Small delay to let the page load
     const timer = setTimeout(() => {
-      if (!isVerified && showVerification) {
+      if (!isVerified && showVerification && contractAddress) {
         handleVerification();
       }
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [contractAddress]);
 
   const handleVerification = async () => {
     setVerificationState('pending');
@@ -159,10 +177,18 @@ export default function Home() {
 
             {/* Content Section */}
             <div className="px-6 min-h-screen">
+              {/* Error Message */}
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-center">
-                  <p className="font-medium">Error loading events</p>
-                  <p className="text-sm">{error}</p>
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
+                  <p className="font-medium">⚠️ Blockchain Error</p>
+                  <p className="text-sm mb-3">{error}</p>
+                  <button 
+                    onClick={refreshEvents}
+                    disabled={isLoading}
+                    className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                  >
+                    {isLoading ? 'Retrying...' : 'Try Again'}
+                  </button>
                 </div>
               )}
 
@@ -170,8 +196,19 @@ export default function Home() {
               <div className="mb-8 pt-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">Available Events</h2>
-                  <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
-                    {events.length} {events.length === 1 ? 'event' : 'events'}
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
+                      {events.length} {events.length === 1 ? 'event' : 'events'}
+                    </div>
+                    {!error && (
+                      <button 
+                        onClick={refreshEvents}
+                        disabled={isLoading}
+                        className="text-sm text-blue-600 hover:text-blue-800 disabled:text-blue-400 font-medium"
+                      >
+                        {isLoading ? '🔄 Loading...' : '🔄 Refresh'}
+                      </button>
+                    )}
                   </div>
                 </div>
 
