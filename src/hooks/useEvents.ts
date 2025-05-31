@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPublicClient, http, defineChain, isAddress } from 'viem';
 import { Event } from '@/types/events';
 import TicketNFTABI from '@/abi/TicketNFT.json';
@@ -34,6 +34,12 @@ const worldchainSepolia = defineChain({
   testnet: true,
 });
 
+// Create client outside component to avoid recreating it
+const client = createPublicClient({
+  chain: worldchainSepolia,
+  transport: http('https://worldchain-sepolia.g.alchemy.com/public'),
+});
+
 // Type for smart contract getAllEvents return value
 type ContractEvent = {
   id: bigint;
@@ -53,14 +59,8 @@ export function useEvents({ contractAddress }: UseEventsProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Client for reading from blockchain
-  const client = createPublicClient({
-    chain: worldchainSepolia,
-    transport: http('https://worldchain-sepolia.g.alchemy.com/public'),
-  });
-
   // Test blockchain connection
-  const testConnection = async () => {
+  const testConnection = useCallback(async () => {
     try {
       console.log('Testing blockchain connection...');
       const blockNumber = await client.getBlockNumber();
@@ -70,10 +70,10 @@ export function useEvents({ contractAddress }: UseEventsProps) {
       console.error('Blockchain connection test failed:', err);
       return false;
     }
-  };
+  }, []);
 
   // Check if contract exists at address
-  const checkContractExists = async (address: string) => {
+  const checkContractExists = useCallback(async (address: string) => {
     try {
       console.log('Checking if contract exists at:', address);
       const bytecode = await client.getBytecode({
@@ -86,10 +86,10 @@ export function useEvents({ contractAddress }: UseEventsProps) {
       console.error('Error checking contract existence:', err);
       return false;
     }
-  };
+  }, []);
 
   // Load events from blockchain
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     if (!contractAddress) {
       setError('Contract address is not provided');
       setIsLoading(false);
@@ -180,26 +180,27 @@ export function useEvents({ contractAddress }: UseEventsProps) {
 
       console.log('All events successfully loaded:', eventsFromContract);
       setEvents(eventsFromContract);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Detailed error loading events:', err);
       
       let errorMessage = 'Failed to load events from blockchain';
       
-      if (err?.message) {
-        if (err.message.includes('Contract not found')) {
-          errorMessage = err.message;
-        } else if (err.message.includes('Cannot connect')) {
-          errorMessage = err.message;
-        } else if (err.message.includes('ContractFunctionExecutionError')) {
+      if (err && typeof err === 'object' && 'message' in err) {
+        const errorWithMessage = err as { message: string };
+        if (errorWithMessage.message.includes('Contract not found')) {
+          errorMessage = errorWithMessage.message;
+        } else if (errorWithMessage.message.includes('Cannot connect')) {
+          errorMessage = errorWithMessage.message;
+        } else if (errorWithMessage.message.includes('ContractFunctionExecutionError')) {
           errorMessage = 'Contract function failed. The getAllEvents function may not exist or contract is not properly deployed.';
-        } else if (err.message.includes('network') || err.message.includes('fetch')) {
+        } else if (errorWithMessage.message.includes('network') || errorWithMessage.message.includes('fetch')) {
           errorMessage = 'Network connection error. Check your internet connection.';
-        } else if (err.message.includes('getAllEvents')) {
-          errorMessage = err.message;
-        } else if (err.message.includes('execution reverted')) {
+        } else if (errorWithMessage.message.includes('getAllEvents')) {
+          errorMessage = errorWithMessage.message;
+        } else if (errorWithMessage.message.includes('execution reverted')) {
           errorMessage = 'Contract returned an error. It may not be properly initialized.';
         } else {
-          errorMessage = `Blockchain error: ${err.message}`;
+          errorMessage = `Blockchain error: ${errorWithMessage.message}`;
         }
       }
       
@@ -207,7 +208,7 @@ export function useEvents({ contractAddress }: UseEventsProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [contractAddress, testConnection, checkContractExists]);
 
   // Add new event to local state
   const addEvent = (newEvent: Event) => {
@@ -218,7 +219,7 @@ export function useEvents({ contractAddress }: UseEventsProps) {
   useEffect(() => {
     console.log('useEvents: contractAddress changed to:', contractAddress);
     loadEvents();
-  }, [contractAddress]);
+  }, [contractAddress, loadEvents]);
 
   return {
     events,

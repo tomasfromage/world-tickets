@@ -4,7 +4,7 @@ import { EventsList } from '@/components/EventsList';
 import { useEvents } from '@/hooks/useEvents';
 import { TopBar, Button, LiveFeedback } from '@worldcoin/mini-apps-ui-kit-react';
 import { MiniKit, VerificationLevel } from '@worldcoin/minikit-js';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Shield, Sparks } from 'iconoir-react';
 import { getValidatedContractAddress } from '@/utils/contract';
@@ -39,19 +39,7 @@ export default function Home() {
   const [showVerification, setShowVerification] = useState(true);
   const [verificationState, setVerificationState] = useState<'pending' | 'success' | 'failed' | undefined>(undefined);
 
-  // Automatically open verification dialog after loading
-  useEffect(() => {
-    // Small delay to let the page load
-    const timer = setTimeout(() => {
-      if (!isVerified && showVerification && contractAddress) {
-        handleVerification();
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [contractAddress]);
-
-  const handleVerification = async () => {
+  const handleVerification = useCallback(async () => {
     setVerificationState('pending');
     
     try {
@@ -89,7 +77,19 @@ export default function Home() {
         setVerificationState(undefined);
       }, 2000);
     }
-  };
+  }, []);
+
+  // Automatically open verification dialog after loading
+  useEffect(() => {
+    // Small delay to let the page load
+    const timer = setTimeout(() => {
+      if (!isVerified && showVerification && contractAddress) {
+        handleVerification();
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [contractAddress, isVerified, showVerification, handleVerification]);
 
   const handleEventSelect = (event: Event) => {
     // Navigate to event detail
@@ -107,7 +107,7 @@ export default function Home() {
         <TopBar title="Tickets" />
       </Page.Header>
       
-      <Page.Main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 mb-16">
+      <Page.Main className="min-h-screen bg-white mb-16">
         {showVerification && !isVerified && (
           <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
             <div className="bg-white rounded-2xl p-8 w-full max-w-sm shadow-2xl border border-gray-100">

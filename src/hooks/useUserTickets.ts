@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createPublicClient, http, defineChain } from 'viem';
 import { Ticket } from '@/types/events';
 import TicketNFTABI from '@/abi/TicketNFT.json';
@@ -46,19 +46,19 @@ const worldchainSepolia = defineChain({
   testnet: true,
 });
 
+// Create client outside component to avoid recreating it
+const client = createPublicClient({
+  chain: worldchainSepolia,
+  transport: http('https://worldchain-sepolia.g.alchemy.com/public'),
+});
+
 export function useUserTickets({ contractAddress, userAddress }: UseUserTicketsProps) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Client for reading from blockchain
-  const client = createPublicClient({
-    chain: worldchainSepolia,
-    transport: http('https://worldchain-sepolia.g.alchemy.com/public'),
-  });
-
   // Load user's tickets from blockchain
-  const loadUserTickets = async () => {
+  const loadUserTickets = useCallback(async () => {
     if (!contractAddress || !userAddress) {
       setTickets([]);
       setIsLoading(false);
@@ -105,7 +105,7 @@ export function useUserTickets({ contractAddress, userAddress }: UseUserTicketsP
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [contractAddress, userAddress]);
 
   // Add new ticket to local state
   const addTicket = (newTicket: Ticket) => {
@@ -115,7 +115,7 @@ export function useUserTickets({ contractAddress, userAddress }: UseUserTicketsP
   // Load tickets when dependencies change
   useEffect(() => {
     loadUserTickets();
-  }, [contractAddress, userAddress]);
+  }, [contractAddress, userAddress, loadUserTickets]);
 
   return {
     tickets,

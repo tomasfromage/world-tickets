@@ -37,7 +37,22 @@ interface DiagnosticResult {
   test: string;
   status: 'pending' | 'success' | 'error';
   message: string;
-  details?: any;
+  details?: Record<string, unknown>;
+}
+
+interface ABIItem {
+  name?: string;
+  type: string;
+  inputs?: Array<{
+    name: string;
+    type: string;
+    internalType?: string;
+  }>;
+  outputs?: Array<{
+    name: string;
+    type: string;
+    internalType?: string;
+  }>;
 }
 
 export function BlockchainDiagnostic() {
@@ -154,7 +169,7 @@ export function BlockchainDiagnostic() {
     setResults([...tests]);
 
     // Test 5: ABI verification
-    const getAllEventsFunction = TicketNFTABI.find((item: any) => item.name === 'getAllEvents');
+    const getAllEventsFunction = TicketNFTABI.find((item: ABIItem) => item.name === 'getAllEvents');
     if (getAllEventsFunction) {
       tests.push({
         test: 'ABI verification - getAllEvents function',
