@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createPublicClient, http } from 'viem';
-import { worldchain } from 'viem/chains';
+import { createPublicClient, http, defineChain } from 'viem';
 import { Event } from '@/types/events';
 import TicketNFTABI from '@/abi/TicketNFT.json';
 
@@ -8,18 +7,46 @@ interface UseEventsProps {
   contractAddress: string;
 }
 
-// Type for smart contract getEvent return value
-type ContractEventData = [
-  string, // name
-  string, // description  
-  bigint, // date
-  string, // location
-  bigint, // price
-  bigint, // totalTickets
-  bigint, // soldTickets
-  string, // vendor
-  string  // eventType
-];
+// Define WorldChain Sepolia testnet
+const worldchainSepolia = defineChain({
+  id: 4801,
+  name: 'WorldChain Sepolia',
+  network: 'worldchain-sepolia',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Worldcoin',
+    symbol: 'WLD',
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://worldchain-sepolia.g.alchemy.com/public'],
+    },
+    public: {
+      http: ['https://worldchain-sepolia.g.alchemy.com/public'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'WorldChain Sepolia Explorer',
+      url: 'https://worldchain-sepolia.blockscout.com',
+    },
+  },
+  testnet: true,
+});
+
+// Type for smart contract getAllEvents return value
+type ContractEvent = {
+  id: bigint;
+  name: string;
+  description: string;
+  date: bigint;
+  location: string;
+  ticketPrice: bigint;
+  totalTickets: bigint;
+  soldTickets: bigint;
+  vendor: string;
+  eventType: string;
+};
 
 export function useEvents({ contractAddress }: UseEventsProps) {
   const [events, setEvents] = useState<Event[]>([]);
@@ -28,8 +55,8 @@ export function useEvents({ contractAddress }: UseEventsProps) {
 
   // Client for reading from blockchain
   const client = createPublicClient({
-    chain: worldchain,
-    transport: http('https://worldchain-mainnet.g.alchemy.com/public'),
+    chain: worldchainSepolia,
+    transport: http('https://worldchain-sepolia.g.alchemy.com/public'),
   });
 
   // Load events from blockchain
@@ -40,71 +67,29 @@ export function useEvents({ contractAddress }: UseEventsProps) {
     setError(null);
 
     try {
-      // Get EventCreated logs
-      const eventLogs = await client.getLogs({
+      // Get all events using getAllEvents function
+      const contractEvents = await client.readContract({
         address: contractAddress as `0x${string}`,
-        event: {
-          type: 'event',
-          name: 'EventCreated',
-          inputs: [
-            { indexed: true, name: 'eventId', type: 'uint256' },
-            { indexed: false, name: 'name', type: 'string' },
-            { indexed: false, name: 'price', type: 'uint256' },
-            { indexed: false, name: 'totalTickets', type: 'uint256' },
-            { indexed: true, name: 'vendor', type: 'address' },
-          ],
-        },
-        fromBlock: 'earliest',
-        toBlock: 'latest',
-      });
+        abi: TicketNFTABI,
+        functionName: 'getAllEvents',
+        args: [],
+      }) as ContractEvent[];
 
-      // Map logs to Event objects
-      const eventsFromLogs: Event[] = await Promise.all(
-        eventLogs.map(async (log) => {
-          const eventId = log.args.eventId as bigint;
-          
-          // Get event details from smart contract
-          try {
-            const eventDetails = await client.readContract({
-              address: contractAddress as `0x${string}`,
-              abi: TicketNFTABI,
-              functionName: 'getEvent',
-              args: [eventId],
-            }) as ContractEventData;
+      // Map contract events to Event objects
+      const eventsFromContract: Event[] = contractEvents.map((contractEvent) => ({
+        id: Number(contractEvent.id),
+        name: contractEvent.name,
+        description: contractEvent.description,
+        date: Number(contractEvent.date),
+        location: contractEvent.location,
+        ticketPrice: (Number(contractEvent.ticketPrice) / 1e18).toString(), // Convert from Wei
+        totalTickets: Number(contractEvent.totalTickets),
+        soldTickets: Number(contractEvent.soldTickets),
+        vendor: contractEvent.vendor,
+        eventType: contractEvent.eventType as "Conference" | "Sport" | "Concert" | "Hackathon" | "Other",
+      }));
 
-            // Assuming getEvent return structure: [name, description, date, location, price, totalTickets, soldTickets, vendor, eventType]
-            return {
-              id: Number(eventId),
-              name: eventDetails[0],
-              description: eventDetails[1],
-              date: Number(eventDetails[2]),
-              location: eventDetails[3],
-              ticketPrice: (Number(eventDetails[4]) / 1e18).toString(), // Convert from Wei
-              totalTickets: Number(eventDetails[5]),
-              soldTickets: Number(eventDetails[6]),
-              vendor: eventDetails[7],
-              eventType: eventDetails[8] as "Conference" | "Sport" | "Concert" | "Hackathon" | "Other",
-            };
-          } catch (contractError) {
-            console.error('Error reading event details:', contractError);
-            // Fallback with data from log
-            return {
-              id: Number(eventId),
-              name: log.args.name as string,
-              description: 'Loading description...',
-              date: Math.floor(Date.now() / 1000) + 86400, // Placeholder
-              location: 'Loading location...',
-              ticketPrice: (Number(log.args.price) / 1e18).toString(),
-              totalTickets: Number(log.args.totalTickets),
-              soldTickets: 0,
-              vendor: log.args.vendor as string,
-              eventType: 'Other' as const,
-            };
-          }
-        })
-      );
-
-      setEvents(eventsFromLogs);
+      setEvents(eventsFromContract);
     } catch (err) {
       console.error('Error loading events:', err);
       setError('Failed to load events from blockchain');
